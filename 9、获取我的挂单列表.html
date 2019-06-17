@@ -1,0 +1,20 @@
+<script src="./sdk/sdk.js"></script>
+<script>
+// 声明使用测试网络，如果使用正式网络请使用
+MySdk.Network.usePublicNetwork();
+//MySdk.Network.useTestNetwork();
+// 是否支持http协议，否则仅支持https协议
+MySdk.Config.setAllowHttp(false);
+
+// 定义超级区块链测试服务器地址
+var host = "https://api.essablock.com:8000/";
+// 我的账号公钥
+var myAccount = "G******";
+var server = new MySdk.Server(host);
+var cursor = "";
+var dir = "desc";
+
+server.offers('accounts', myAccount).cursor(cursor).limit(10).order(dir).call().then(function(offer) {
+	console.log(offer);
+});
+</script>

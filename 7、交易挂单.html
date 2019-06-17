@@ -1,0 +1,59 @@
+<script src="./sdk/sdk.js"></script>
+<script>
+// 声明使用测试网络，如果使用正式网络请使用
+MySdk.Network.usePublicNetwork();
+// MySdk.Network.useTestNetwork();
+// 是否支持http协议，否则仅支持https协议
+MySdk.Config.setAllowHttp(false);
+
+// 定义超级区块链测试服务器地址
+var host = "https://api.essablock.com:8000/";
+// 原始账号私钥
+var secretString = 'S******';
+// 交易标的物发行方（为空即底层资产）
+var obj_issuer = "G******";
+// 交易标的物代码（区分大小写）
+var obj_code = "";
+// 本位资产发行方（为空即底层资产）
+var src_issuer = "G******";
+// 本位资产代码（区分大小写）
+var src_code = "";
+
+// 根据私钥生成密钥对，注意不能根据公钥生成密钥对
+var sourceKeys = MySdk.Keypair.fromSecret(secretString);
+var server = new MySdk.Server(host);
+var sellObj = (src_issuer == "" || src_code == "")? MySdk.Asset.native() : new MySdk.Asset(src_code, src_issuer);
+var buyObj = (obj_issuer == "" || obj_code == "")? MySdk.Asset.native() : new MySdk.Asset(obj_code, obj_issuer);
+
+
+server.loadAccount(sourceKeys.publicKey())
+	.catch(MySdk.NotFoundError, function (error) {
+		// 当原始账号不存在时，会抛出异常
+	    throw new Error('The destination account does not exist!');
+	  })
+	.then(function(sourceAccount){
+		// 原始账号存在时，进行创建账号操作
+		var transaction = new MySdk.TransactionBuilder(sourceAccount)
+		    .addOperation(MySdk.Operation.manageOffer({
+		        selling: sellObj,
+		        buying: buyObj,
+		        amount: "3",//卖出资产的数量，即用多少钱去买
+		        price: "0.2"//买入价格，如果已有相应卖单价格，以卖单价格成交，能买入数量为100/0.01，即10000个cltb
+		      }))
+		    .addMemo(MySdk.Memo.text('卖出'))
+		    // 此处可以添加多个操作，一个事务最多容纳100个事务
+		    .build();
+		
+		transaction.sign(sourceKeys); // 交易签名，只有签名的交易才能提交到区块链
+		
+		server.submitTransaction(transaction) // 提交交易信息
+			.then(function(transactionResult) {
+			    console.log('\nSuccess! View the transaction at: ');
+			    console.log(transactionResult._links.transaction.href);
+			})
+			.catch(function(err) {
+				console.log('An error has occured:');
+			    console.log(err);
+			});
+	});
+</script>

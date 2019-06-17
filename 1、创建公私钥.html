@@ -1,0 +1,15 @@
+﻿<script src="./sdk/sdk.js"></script>
+<script>
+// 固定公私钥
+// var seed = MySdk.hash("test");
+// var pair = MySdk.Keypair.fromRawSeed(seed);
+// 创建随机秘钥对
+var pair = MySdk.Keypair.random();
+// 获取私钥
+var sec = pair.secret();
+// 获取公钥
+var pub = pair.publicKey();
+// 显示
+console.log("secret:" + sec + "\npublic:"+pub);
+document.write("私钥:" + sec + " （请严格保密）<br>\n公钥:" + pub + " （请对外提供）");
+</script>

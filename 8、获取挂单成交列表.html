@@ -1,0 +1,38 @@
+<script src="./sdk/sdk.js"></script>
+<script>
+// 声明使用测试网络，如果使用正式网络请使用
+MySdk.Network.usePublicNetwork();
+//MySdk.Network.useTestNetwork();
+// 是否支持http协议，否则仅支持https协议
+MySdk.Config.setAllowHttp(false);
+
+// 定义超级区块链测试服务器地址
+var host = "https://api.essablock.com:8000/";
+// 交易标的物发行方（为空即底层资产）
+var obj_issuer = "G***********";
+// 交易标的物代码（区分大小写）
+var obj_code = "";
+// 本位资产发行方（为空即底层资产）
+var src_issuer = "G***********";
+// 本位资产代码（区分大小写）
+var src_code = "";
+
+var server = new MySdk.Server(host);
+var sellObj = (src_issuer == "" || src_code == "")? MySdk.Asset.native() : new MySdk.Asset(src_code, src_issuer);
+var buyObj = (obj_issuer == "" || obj_code == "")? MySdk.Asset.native() : new MySdk.Asset(obj_code, obj_issuer);
+
+//当前交易品种挂单表
+server.orderbook(sellObj, buyObj).limit(10).call()
+	.then(function(orderbook){//asks为卖方，bids为买方，base为本位资产，counter为对手资产
+		console.log(orderbook);
+	});
+
+//当前交易品种成交表
+//价格计算：bought_amount/sold_amount
+//当前价格：以下操作的第一条返回记录，即最新成交价。买入卖出数量相除即为价格。
+//昨天收盘价：根据trades的时间信息created_at在昨天的时间戳（注意需要+8个小时）以及买卖数量计算价格，以获得昨日收盘价。
+server.orderbook(sellObj, buyObj).trades().limit(10).order("desc").call()
+	.then(function(trades){
+		console.log(trades);
+	});
+</script>

@@ -1,0 +1,37 @@
+<script src="./sdk/sdk.js"></script>
+<script>
+// 声明使用测试网络，如果使用正式网络请使用
+MySdk.Network.usePublicNetwork();
+//MySdk.Network.useTestNetwork();
+// 是否支持http协议，否则仅支持https协议
+MySdk.Config.setAllowHttp(false);
+
+// 定义超级区块链测试服务器地址
+var host = "https://api.essablock.com:8000/";
+// 目标账号公钥，每次接收到资产时候触发stream流
+var destAccount = 'G******';
+
+var server = new MySdk.Server(host);
+var cur = "";// 分页指针
+
+// 获取最后一条记录的分页指针
+server.payments().forAccount(destAccount).limit(1).order("desc").call()
+	.then(function(paymentResult){
+		// 原有转账数据
+		if(paymentResult.records.length > 0){
+			console.log(paymentResult);
+			cur = paymentResult.records[0].paging_token;
+		}
+		
+		// 监听支付数据
+		server.payments().forAccount(destAccount).order("asc").cursor(cur).stream({
+			onmessage: function(paymentStream){
+				console.log(paymentStream);
+			},
+			
+			onerror: function(errormsg){
+				console.log(errormsg);
+			}
+		});
+	});
+</script>

@@ -1,0 +1,49 @@
+<script src="./sdk/sdk.js"></script>
+<script>
+// 声明使用测试网络，如果使用正式网络请使用
+MySdk.Network.usePublicNetwork();
+//MySdk.Network.useTestNetwork();
+// 是否支持http协议，否则仅支持https协议
+MySdk.Config.setAllowHttp(false);
+
+// 定义超级区块链测试服务器地址
+var host = "https://api.essablock.com:8000/";
+// 原始账号私钥
+var secretString = 'S******';
+
+//转账的代币名字
+var code = '';
+//转账代币的发行方,是一个公钥
+var issuer = 'G******';
+// 根据私钥生成密钥对，注意不能根据公钥生成密钥对
+var sourceKeys = MySdk.Keypair.fromSecret(secretString);
+var server = new MySdk.Server(host);
+var assetObj = new MySdk.Asset(code, issuer);
+
+server.loadAccount(sourceKeys.publicKey())
+	.catch(MySdk.NotFoundError, function (error) {
+		// 当原始账号不存在时，会抛出异常
+	    throw new Error('The source account does not exist!');
+	  })
+	.then(function(sourceAccount){
+		// 目标账号存在时，进行创建账号操作
+		var transaction = new MySdk.TransactionBuilder(sourceAccount)
+		    .addOperation(MySdk.Operation.changeTrust({
+		    	asset:assetObj
+		    }))
+		    // 此处可以添加多个操作，一个事务最多容纳100个事务
+		    .build();
+		
+		transaction.sign(sourceKeys); // 交易签名，只有签名的交易才能提交到区块链
+		
+		server.submitTransaction(transaction) // 提交交易信息
+			.then(function(transactionResult) {
+			    console.log('\nSuccess! View the transaction at: ');
+			    console.log(transactionResult._links.transaction.href);
+			})
+			.catch(function(err) {
+				console.log('An error has occured:');
+			    console.log(err);
+			});
+	});
+</script>
